@@ -1,10 +1,11 @@
 {
   "name": "simple-web-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "for texting internet connectivity on aws",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server"
   },
   "keywords": [],
   "author": "",
