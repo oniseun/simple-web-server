@@ -72,7 +72,7 @@ app.get('/postgresql', async (req, res) => {
         return res.status(500).json({ message: 'Redis connection failed', error: e.message });
     } finally {
         console.log(`Quit Redis Client`);
-        await redisClient.quit(); 
+        await redisClient.quit();
     }
     
   });
@@ -92,16 +92,17 @@ app.get('/postgresql', async (req, res) => {
 
 app.get('/kafka', async (req, res) => {
 
-    const { KAFKA_BROKER, KAFKA_USERNAME, KAFKA_PASSWORD, KAFKA_ENABLE_SSL='false', KAFKA_MECHANISM = 'plain' } = process.env
+    const { KAFKA_BROKER, KAFKA_USERNAME, KAFKA_PASSWORD, KAFKA_ENABLE_SSL='false', KAFKA_MECHANISM = 'plain' } = process.env;
+    const sasl =  {
+        mechanism:  KAFKA_MECHANISM, // SASL mechanism (e.g., plain)
+        username: KAFKA_USERNAME, // Kafka username
+        password: KAFKA_PASSWORD // Kafka password
+    }
     const kafka = new Kafka({
         clientId: 'test-app',
         brokers: KAFKA_BROKER.includes(',') ? KAFKA_BROKER.split(',') : [KAFKA_BROKER],
         ssl: KAFKA_ENABLE_SSL==='true' || KAFKA_ENABLE_SSL === true ? true : false, // Set to true if SSL is enabled
-        sasl: {
-            mechanism:  KAFKA_MECHANISM, // SASL mechanism (e.g., plain)
-            username: KAFKA_USERNAME, // Kafka username
-            password: KAFKA_PASSWORD // Kafka password
-        }
+        sasl: KAFKA_USERNAME === '' &&  KAFKA_PASSWORD === '' ? undefined : sasl,
     });
     // Create an admin client to test the connection
     const admin = kafka.admin(); 
