@@ -1,15 +1,12 @@
 version: 0.2
 
-variables:
-  APP_NAME: "demo"
-
 phases:
-  install: 
-    runtime-versions: 
-      docker: 18      
-    commands:  
-      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2& 
-      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done" 
+  # install: 
+  #   runtime-versions: 
+  #     docker: 18      
+  #   commands:  
+  #     - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2& 
+  #     - timeout 15 sh -c "until docker info; do echo .; sleep 1; done" 
 
   pre_build:
     commands:
@@ -20,6 +17,7 @@ phases:
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
 
       # Define the ECR repository URL based on the app name
+      - APP_NAME="demo"
       - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
 
       # Check if the ECR repository exists, create if not
@@ -54,4 +52,3 @@ phases:
 
 artifacts:
   files: imagedefinitions.json
-
