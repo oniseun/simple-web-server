@@ -95,7 +95,7 @@ app.get('/kafka', async (req, res) => {
     const { KAFKA_BROKER, KAFKA_USERNAME, KAFKA_PASSWORD, KAFKA_ENABLE_SSL='false', KAFKA_MECHANISM = 'plain' } = process.env
     const kafka = new Kafka({
         clientId: 'test-app',
-        brokers: [KAFKA_BROKER], // Update with your Kafka broker address
+        brokers: KAFKA_BROKER.includes(',') ? KAFKA_BROKER.split(',') : [KAFKA_BROKER],
         ssl: KAFKA_ENABLE_SSL==='true' || KAFKA_ENABLE_SSL === true ? true : false, // Set to true if SSL is enabled
         sasl: {
             mechanism:  KAFKA_MECHANISM, // SASL mechanism (e.g., plain)
