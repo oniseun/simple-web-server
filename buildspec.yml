@@ -1,0 +1,57 @@
+version: 0.2
+
+variables:
+  APP_NAME: "demo"
+
+phases:
+  install: 
+    runtime-versions: 
+      docker: 18      
+    commands:  
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2& 
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done" 
+
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+
+      # Get the AWS account ID
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
+
+      # Define the ECR repository URL based on the app name
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
+
+      # Check if the ECR repository exists, create if not
+      - |
+        if ! aws ecr describe-repositories --repository-names $APP_NAME >/dev/null 2>&1; then
+            echo "ECR repository $APP_NAME does not exist, creating..."
+            aws ecr create-repository --repository-name $APP_NAME
+        fi
+
+      # Update REPOSITORY_URI if a new repository was created
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
+
+      # Extract the first 7 characters of the commit hash as the image tag
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' $APP_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files: imagedefinitions.json
+
