@@ -92,36 +92,33 @@ app.get('/postgresql', async (req, res) => {
 
 app.get('/kafka', async (req, res) => {
 
-  const kafka = new Kafka({
-    clientId: 'test-app',
-    brokers: [process.env.KAFKA_BROKER], // Update with your Kafka broker address
-    ssl: true, // Set to true if SSL is enabled
-    sasl: {
-      mechanism: 'plain', // SASL mechanism (e.g., plain)
-      username: process.env.KAFKA_USERNAME, // Kafka username
-      password: process.env.KAFKA_PASSWORD // Kafka password
-    }
-  });
-  // Create an admin client to test the connection
-  const admin = kafka.admin();
-  
-  const testConnection = async () => {
+    const { KAFKA_BROKER, KAFKA_USERNAME, KAFKA_PASSWORD, KAFKA_ENABLE_SSL='false', KAFKA_MECHANISM = 'plain' } = process.env
+    const kafka = new Kafka({
+        clientId: 'test-app',
+        brokers: [KAFKA_BROKER], // Update with your Kafka broker address
+        ssl: KAFKA_ENABLE_SSL==='true' || KAFKA_ENABLE_SSL === true ? true : false, // Set to true if SSL is enabled
+        sasl: {
+            mechanism:  KAFKA_MECHANISM, // SASL mechanism (e.g., plain)
+            username: KAFKA_USERNAME, // Kafka username
+            password: KAFKA_PASSWORD // Kafka password
+        }
+    });
+    // Create an admin client to test the connection
+    const admin = kafka.admin(); 
+
     try {
-      // Connect to the Kafka cluster
-      await admin.connect();
-      console.log('Connection to Kafka cluster successful');
-      res.json({ message: 'Kafka connection succeed' });
+        // Connect to the Kafka cluster
+        await admin.connect();
+        console.log('Connection to Kafka cluster successful');
+        res.json({ message: 'Kafka connection succeed' });
     } catch (error) {
-      console.error('Error connecting to Kafka cluster:', error);
-      res.status(500).json({ message: 'Kafka connection failed', error: error.message });
+        console.error('Error connecting to Kafka cluster:', error);
+        res.status(500).json({ message: 'Kafka connection failed', error: error.message });
     } finally {
-      // Disconnect from the Kafka cluster
-      await admin.disconnect();
+        // Disconnect from the Kafka cluster
+        await admin.disconnect();
     }
-  };
   
-  // Test the connection
-  await testConnection();
 });
   
 app.listen(port, () => {
