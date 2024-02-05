@@ -18,17 +18,17 @@ phases:
 
       # Define the ECR repository URL based on the app name
       - APP_NAME="demo"
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/demo
 
       # Check if the ECR repository exists, create if not
-      - |
-        if ! aws ecr describe-repositories --repository-names $APP_NAME >/dev/null 2>&1; then
-            echo "ECR repository $APP_NAME does not exist, creating..."
-            aws ecr create-repository --repository-name $APP_NAME
-        fi
+      # - |
+      #   if ! aws ecr describe-repositories --repository-names $APP_NAME >/dev/null 2>&1; then
+      #       echo "ECR repository $APP_NAME does not exist, creating..."
+      #       aws ecr create-repository --repository-name $APP_NAME
+      #   fi
 
-      # Update REPOSITORY_URI if a new repository was created
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
+      # # Update REPOSITORY_URI if a new repository was created
+      # - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$APP_NAME
 
       # Extract the first 7 characters of the commit hash as the image tag
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -48,7 +48,7 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $APP_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' demo $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files: imagedefinitions.json
