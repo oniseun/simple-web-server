@@ -12,6 +12,7 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      - $(aws ecr get-login --no-include-email)
 
       # Get the AWS account ID
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
