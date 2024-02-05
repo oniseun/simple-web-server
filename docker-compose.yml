@@ -1,0 +1,163 @@
+version: '3.8'
+services:
+  redis:
+    container_name: test-redis
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=password
+      - REDIS_USER=default
+    networks:
+      test-network:
+        aliases:
+          - test-redis.local
+  redis-commander:
+    container_name: test-redis-commander
+    hostname: redis-commander-host
+    image: rediscommander/redis-commander:latest
+    ports:
+        - "8081:8081"
+    links:
+        - redis
+    environment:
+      - REDIS_HOSTS=redis
+    networks:
+      test-network:
+        aliases:
+          - test-redis-commander.local
+  mongodb:
+    container_name: test-mongodb
+    image: mongo:latest
+    ports:
+      - "127.0.0.1:27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: test
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_REPLICA_HOST: mongodb
+      MONGO_REPLICA_PORT: 27017
+    networks:
+      test-network:
+        aliases:
+          - test-mongodb.local
+  postgres-db:
+    container_name: test-db
+    ports:
+      - '${DATABASE_PORT:-5432}:5432'
+    expose:
+      - '${DATABASE_PORT:-5432}'
+    image: postgres:12-alpine
+    environment:
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=test
+    networks:
+      test-network:
+        aliases:
+          - posgres.db.local
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - "5050:80"
+    links:
+      - postgres-db
+    networks:
+      test-network:
+        aliases:
+          - posgres.admin.local
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    hostname: test_zoo
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_SERVERS: test_zoo:2888:3888
+      ZOOKEEPER_AUTHENTICATION_TYPE: "SASL_PLAINTEXT"
+      ZOOKEEPER_SASL_AUTH_ENABLED: "true"
+      ZOOKEEPER_SASL_MECHANISM: "PLAIN"
+    ports:
+      - 2181:2181
+    networks:
+      test-network:
+        aliases:
+          - zookeeper.local
+
+  kafka:
+    container_name: kafka
+    hostname: test_kafka
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+      - "9092:9092"
+      - "9999:9999"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "test_zoo:2181"
+      KAFKA_ADVERTISED_LISTENERS: SASL_PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SASL_PLAINTEXT:SASL_PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: SASL_PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: "org.apache.zookeeper=ERROR, org.apache.kafka=ERROR, kafka=ERROR, kafka.cluster=ERROR, kafka.controller=ERROR, kafka.coordinator=ERROR, kafka.log=ERROR, kafka.server=ERROR, kafka.zookeeper=ERROR, state.change.logger=ERROR"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+      KAFKA_TOOLS_LOG4J_LOGLEVEL: ERROR
+      KAFKA_LOG4J_ROOT_LOGGER: WARN
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_HOSTNAME: ${DOCKER_HOST_IP:-127.0.0.1}
+      KAFKA_AUTHORIZER_CLASS_NAME: kafka.security.authorizer.AclAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      KAFKA_SUPER_USERS: User:test
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf -Dusername=test -Dpassword=password"
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    networks:
+      test-network:
+        aliases:
+          - kafka.zookeeper.local
+  kafka_ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - zookeeper
+      - kafka
+    ports:
+      - 8080:8080
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    environment:
+      KAFKA_CLUSTERS_0_ZOOKEEPER: "test_zoo:2181"
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_client_jaas.conf -Dusername=test -Dpassword=password"
+    networks:
+      test-network:
+        aliases:
+          - kafka-ui.zookeeper.local
+networks:
+    test-network:
+      driver: bridge
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
