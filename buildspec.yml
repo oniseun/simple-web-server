@@ -12,9 +12,10 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
+      # Get the AWS account ID
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION  | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
-    
 
       # Define the ECR repository URL based on the app name
       - APP_NAME="demo"
