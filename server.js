@@ -3,7 +3,7 @@ const axios = require('axios');
 const { Pool } = require('pg');
 const redis = require('redis');
 const { MongoClient } = require('mongodb');
-const { KafkaClient } = require('kafka-node');
+const { Kafka } = require('kafkajs');
 require('dotenv').config();
 
 const app = express();
@@ -90,24 +90,38 @@ app.get('/postgresql', async (req, res) => {
     }
   });
 
-app.get('/kafka', (req, res) => {
-  const kafkaClient = new KafkaClient({
-    kafkaHost: process.env.KAFKA_BROKER,
-    sasl: {
-      mechanism: 'plain',
-      username: process.env.KAFKA_USERNAME,
-      password: process.env.KAFKA_PASSWORD,
-    },
-  });
+app.get('/kafka', async (req, res) => {
 
-  kafkaClient.loadMetadataForTopics([], (error) => {
-    if (error) {
-      res.status(500).json({ message: 'Kafka connection failed', error: error.message });
-    } else {
-      res.json({ message: 'Kafka connection succeed' });
+  const kafka = new Kafka({
+    clientId: 'test-app',
+    brokers: [process.env.KAFKA_BROKER], // Update with your Kafka broker address
+    ssl: true, // Set to true if SSL is enabled
+    sasl: {
+      mechanism: 'plain', // SASL mechanism (e.g., plain)
+      username: process.env.KAFKA_USERNAME, // Kafka username
+      password: process.env.KAFKA_PASSWORD // Kafka password
     }
-    kafkaClient.close();
   });
+  // Create an admin client to test the connection
+  const admin = kafka.admin();
+  
+  const testConnection = async () => {
+    try {
+      // Connect to the Kafka cluster
+      await admin.connect();
+      console.log('Connection to Kafka cluster successful');
+      res.json({ message: 'Kafka connection succeed' });
+    } catch (error) {
+      console.error('Error connecting to Kafka cluster:', error);
+      res.status(500).json({ message: 'Kafka connection failed', error: error.message });
+    } finally {
+      // Disconnect from the Kafka cluster
+      await admin.disconnect();
+    }
+  };
+  
+  // Test the connection
+  await testConnection();
 });
   
 app.listen(port, () => {
