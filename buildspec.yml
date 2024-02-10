@@ -18,8 +18,8 @@ phases:
 
 
       # Define the ECR repository URL based on the app name
-      - APP_NAME="demo"
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/demo
+      - APP_NAME="simple-web-server"
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/simple-web-server
 
       # Check if the ECR repository exists, create if not
       # - |
@@ -49,7 +49,7 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' demo $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' simple-web-server $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
   files: imagedefinitions.json
